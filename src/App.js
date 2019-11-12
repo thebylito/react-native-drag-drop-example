@@ -3,38 +3,36 @@ import {
   StyleSheet,
   View,
   Text,
+  Image,
   PanResponder,
   Animated,
   Dimensions,
   FlatList,
-  ScrollView,
-  Image,
-  TouchableOpacity,
 } from 'react-native';
 
 const { height } = Dimensions.get('screen');
 
-function getRandomColor() {
-  var letters = '0123456789ABCDEF';
-  var color = '#';
-  for (var i = 0; i < 6; i++) {
-    color += letters[Math.floor(Math.random() * 16)];
-  }
-  return color;
-}
-
 const items = [
-  { id: 'a', img: 'https://via.placeholder.com/150' },
-  { id: 'b', img: 'https://via.placeholder.com/150' },
-  { id: 'c', img: 'https://via.placeholder.com/150' },
-  { id: 'd', img: 'https://via.placeholder.com/150' },
-  { id: 'e', img: 'https://via.placeholder.com/150' },
-  { id: 'f', img: 'https://via.placeholder.com/150' },
-  { id: 'g', img: 'https://via.placeholder.com/150' },
-  { id: 'h', img: 'https://via.placeholder.com/150' },
+  [
+    { id: 'a', img: 'https://via.placeholder.com/150' },
+    { id: 'b', img: 'https://via.placeholder.com/150' },
+  ],
+  [
+    { id: 'c', img: 'https://via.placeholder.com/150' },
+    { id: 'd', img: 'https://via.placeholder.com/150' },
+  ],
+  [
+    { id: 'e', img: 'https://via.placeholder.com/150' },
+    { id: 'f', img: 'https://via.placeholder.com/150' },
+  ],
+  [
+    { id: 'g', img: 'https://via.placeholder.com/150' },
+    { id: 'h', img: 'https://via.placeholder.com/150' },
+  ],
 ];
 
 function DraggableItem({ children, onItemPress, onItemRelease, anySelected }) {
+  const viewRef = React.useRef();
   const panRef = React.useRef(new Animated.ValueXY());
   const scaleRef = React.useRef(new Animated.Value(1));
   const [active, setActive] = React.useState(false);
@@ -88,6 +86,11 @@ function DraggableItem({ children, onItemPress, onItemRelease, anySelected }) {
       const vx = Math.abs(gestureState.vx);
       if (vy > vx + 0.3 || active) {
         setActive(true);
+        viewRef.current.setNativeProps({
+          style: {
+            zIndex: 999,
+          },
+        });
         return true;
       }
       return false;
@@ -112,14 +115,13 @@ function DraggableItem({ children, onItemPress, onItemRelease, anySelected }) {
 
   return (
     <Animated.View
+      ref={viewRef}
+      onLongPress={() => setActive(true)}
       style={[
         panStyle,
         styles.circle,
         {
-          zIndex: active && 9,
-          backgroundColor: active ? 'green' : 'red',
-          width: 150,
-          height: 150,
+          zIndex: active ? 9999 : 0,
           opacity: anySelected ? (active ? 1 : 0.6) : 1,
         },
       ]}
@@ -140,9 +142,45 @@ export default function App() {
       <View style={styles.dropZone}>
         <Text style={styles.text}>Drop them here!</Text>
       </View>
-      <View style={styles.ballContainer} />
-      <View style={styles.row}>
-        <ScrollView horizontal scrollEnabled={scrollEnabled}>
+      <View style={{ flex: 1 }}>
+        <FlatList
+          scrollEnabled={scrollEnabled}
+          style={{ flex: 1, paddingVertical: 150 }}
+          data={items}
+          horizontal={true}
+          renderItem={({ item, index }) => (
+            <View key={item[0].id}>
+              <DraggableItem
+                onItemPress={onPress}
+                onItemRelease={onRelease}
+                anySelected={scrollEnabled === false}>
+                <Image
+                  source={{ uri: item[0].img }}
+                  style={{ width: 150, height: 150, margin: 5 }}
+                />
+              </DraggableItem>
+              {item.length > 1 ? (
+                <DraggableItem
+                  onItemPress={onPress}
+                  onItemRelease={onRelease}
+                  anySelected={scrollEnabled === false}>
+                  <Image
+                    source={{ uri: item[1].img }}
+                    style={{ width: 150, height: 150, margin: 5 }}
+                  />
+                </DraggableItem>
+              ) : null}
+            </View>
+          )}
+        />
+
+        {/* <ScrollView
+          horizontal
+          scrollEnabled={scrollEnabled}
+          style={{
+            marginTop: 150,
+            marginBottom: 150,
+          }}>
           {items.map(item => (
             <View style={{ margin: 5 }} key={item.id}>
               <DraggableItem
@@ -156,24 +194,7 @@ export default function App() {
               </DraggableItem>
             </View>
           ))}
-        </ScrollView>
-        {/* <FlatList
-          scrollEnabled={scrollEnabled}
-          data={items}
-          horizontal
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => (
-            <DraggableItem
-              key={item.id}
-              onItemPress={onPress}
-              onItemRelease={onRelease}>
-              <Image
-                source={{ uri: item.img }}
-                style={{ width: 150, height: 150 }}
-              />
-            </DraggableItem>
-          )}
-        /> */}
+        </ScrollView> */}
       </View>
     </View>
   );
@@ -198,6 +219,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 150,
     backgroundColor: '#00334d',
+    zIndex: -1,
   },
   text: {
     marginTop: 25,
